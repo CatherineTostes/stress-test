@@ -5,11 +5,12 @@ import (
 	"fmt"
 	"net/http"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
 func MakeRequest(url string, numRequests int, concurrency int) {
-	var statusOk, statusErr int
+	var statusOk, statusErr int32
 	statusOk = 0
 	statusErr = 0
 	now := time.Now()
@@ -21,9 +22,11 @@ func MakeRequest(url string, numRequests int, concurrency int) {
 			for j := 0; j < numRequests/concurrency; j++ {
 				_, err := http.Get(url)
 				if err != nil {
-					statusErr++
+					atomic.AddInt32(&statusErr, 1)
 				}
-				statusOk++
+				if err == nil {
+					atomic.AddInt32(&statusOk, 1)
+				}
 			}
 		}()
 	}
